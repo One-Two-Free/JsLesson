@@ -57,3 +57,330 @@ function isEmpty(obj) {
   }
   return true;
 }
+
+
+
+
+
+//Методы объектов, this
+/*Для полноценной работы метод должен иметь доступ к данным объекта.
+Для доступа к текущему объекту из метода используется ключевое слово this.
+Значением this является объект перед «точкой», в контексте которого вызван метод
+Использование this гарантирует, что функция работает именно с тем объектом, в контексте которого вызвана.
+Через this метод может не только обратиться к любому свойству объекта,
+но и передать куда-то ссылку на сам объект целиком
+Любая функция может иметь в себе this. Совершенно неважно, объявлена ли она в объекте или отдельно от него.
+Значение this называется контекстом вызова и будет определено в момент вызова функции.
+Если одну и ту же функцию запускать в контексте разных объектов, она будет получать разный this
+Значение this не зависит от того, как функция была создана, оно определяется исключительно в момент вызова.
+
+Контекст this никак не привязан к функции, даже если она создана в объявлении объекта. 
+Чтобы this передался, нужно вызвать функцию именно через точку (или квадратные скобки).
+*/
+
+
+/*
+Локальные переменные
+В функции-конструкторе бывает удобно объявить вспомогательные локальные переменные
+и вложенные функции, которые будут видны только внутри:*/
+
+function User(firstName, lastName) {
+  // вспомогательная переменная
+  var phrase = "Привет";
+
+  //  вспомогательная вложенная функция
+  function getFullName() {
+      return firstName + " " + lastName;
+    }
+
+  this.sayHi = function() {
+    alert( phrase + ", " + getFullName() ); // использование
+  };
+}
+
+var vasya = new User("Вася", "Петров");
+vasya.sayHi(); // Привет, Вася Петров
+
+/*
+Те функции и данные, которые должны быть доступны для внешнего кода, 
+мы пишем в this – и к ним можно будет обращаться, как например vasya.sayHi(), 
+а вспомогательные, которые нужны только внутри самого объекта, сохраняем в локальной области видимости.
+*/
+
+
+/*Дескрипторы, геттеры и сеттеры свойств*/
+
+/*
+Основной метод для управления свойствами – Object.defineProperty.
+Он позволяет объявить свойство объекта и, что самое главное, 
+тонко настроить его особые аспекты, которые никак иначе не изменить.
+
+Синтаксис:
+Object.defineProperty(obj, prop, descriptor)
+
+Аргументы:
+obj   Объект, в котором объявляется свойство.
+prop  Имя свойства, которое нужно объявить или модифицировать.
+descriptor  Дескриптор – объект, который описывает поведение свойства.
+
+В нём могут быть следующие поля:
+value – значение свойства, по умолчанию undefined
+writable – значение свойства можно менять, если true. По умолчанию false.
+configurable – если true, то свойство можно удалять, 
+а также менять его в дальнейшем при помощи новых вызовов defineProperty. По умолчанию false.
+enumerable – если true, то свойство просматривается 
+в цикле for..in и методе Object.keys(). По умолчанию false.
+get – функция, которая возвращает значение свойства. По умолчанию undefined.
+set – функция, которая записывает значение свойства. По умолчанию undefined.
+
+Чтобы избежать конфликта, запрещено одновременно указывать значение value и функции get/set. 
+Либо значение, либо функции для его чтения-записи, одно из двух. 
+Также запрещено и не имеет смысла указывать writable при наличии get/set-функций.
+*/
+
+var user = {};
+// 1. простое присваивание
+user.name = "Вася";
+// 2. указание значения через дескриптор
+Object.defineProperty(user, "name", 
+{ value: "Вася", configurable: true, writable: true, enumerable: true });
+
+//Для того, чтобы сделать свойство неизменяемым, изменим его флаги writable и configurable
+
+/*
+Свойство, скрытое для for…in
+Встроенный метод toString, как и большинство встроенных методов, 
+не участвует в цикле for..in. Это удобно, так как обычно такое свойство является «служебным».*/
+var user = {
+  name: "Вася",
+  toString: function() { return this.name; }
+};
+// помечаем toString как не подлежащий перебору в for..in
+Object.defineProperty(user, "toString", {enumerable: false});
+for(var key in user) alert(key);  // name
+
+/*Обратим внимание, вызов defineProperty не перезаписал свойство, а просто модифицировал настройки у существующего toString.*/
+
+/*
+Свойство-функция
+Дескриптор позволяет задать свойство, которое на самом деле работает как функция. Для этого в нём нужно указать эту функцию в get.
+
+Например, у объекта user есть обычные свойства: имя firstName и фамилия surname.
+Создадим свойство fullName, которое на самом деле является функцией:*/
+var user = {firstName: "Вася", surname: "Петров"}
+Object.defineProperty(user, "fullName", {
+  get: function() {
+    return this.firstName + ' ' + this.surname;
+  }});
+alert(user.fullName); // Вася Петров
+/*Обратим внимание, снаружи fullName – это обычное свойство user.fullName. Но дескриптор указывает, что на самом деле его значение возвращается функцией.*/
+
+/*
+Также можно указать функцию, которая используется для записи значения, при помощи дескриптора set.
+Например, добавим возможность присвоения user.fullName к примеру выше:*/
+var user = {firstName: "Вася", surname: "Петров"}
+
+Object.defineProperty(user, "fullName", {
+  get: function() {
+    return this.firstName + ' ' + this.surname;
+  },
+  set: function(value) {
+      var split = value.split(' ');
+      this.firstName = split[0];
+      this.surname = split[1];
+    }
+});
+user.fullName = "Петя Иванов";
+alert( user.firstName ); // Петя
+alert( user.surname ); // Иванов*/
+
+/*
+Указание get/set в литералах
+Если мы создаём объект при помощи синтаксиса { ... }, 
+то задать свойства-функции можно прямо в его определении.
+Для этого используется особый синтаксис: get свойство или set свойство.
+Например, ниже объявлен геттер-сеттер fullName:*/
+var user = {firstName: "Вася",surname: "Петров",
+  get fullName() {return this.firstName + ' ' + this.surname;},
+  set fullName(value) {
+    var split = value.split(' ');
+    this.firstName = split[0];
+    this.surname = split[1];}};
+
+alert( user.fullName ); // Вася Петров (из геттера)
+user.fullName = "Петя Иванов";
+alert( user.firstName ); // Петя  (поставил сеттер)
+alert( user.surname ); // Иванов (поставил сеттер)
+
+/*Object.defineProperties(obj, descriptors)
+Позволяет объявить несколько свойств сразу:*/
+var user = {}
+
+Object.defineProperties(user, {
+  firstName: {value: "Петя"},
+  surname: {value: "Иванов"},
+  fullName: {
+    get: function() {
+      return this.firstName + ' ' + this.surname;}
+	}
+});
+
+alert( user.fullName ); // Петя Иванов
+
+/*
+Object.keys(obj), Object.getOwnPropertyNames(obj)
+Возвращают массив – список свойств объекта.
+
+Object.keys возвращает только enumerable-свойства.
+Object.getOwnPropertyNames – возвращает все:*/
+
+var obj = {a: 1,b: 2,internal: 3};
+Object.defineProperty(obj, "internal", {
+  enumerable: false});
+alert( Object.keys(obj) ); // a,b
+alert( Object.getOwnPropertyNames(obj) ); // a, b, internal
+
+
+/*Object.getOwnPropertyDescriptor(obj, prop)
+Возвращает дескриптор для свойства obj[prop].
+Полученный дескриптор можно изменить и 
+использовать defineProperty для сохранения изменений, например:*/
+var obj = {test: 5};
+var descriptor = Object.getOwnPropertyDescriptor(obj, 'test');
+// заменим value на геттер, для этого...
+delete descriptor.value; // ..нужно убрать value/writable
+delete descriptor.writable;
+descriptor.get = function() { // и поставить get
+  alert( "Preved :)" );
+};
+// поставим новое свойство вместо старого
+// если не удалить - defineProperty объединит старый дескриптор с новым
+delete obj.test;
+Object.defineProperty(obj, 'test', descriptor);
+obj.test; // Preved :)
+
+/*Методы, которые редко используются
+Object.preventExtensions(obj)
+Запрещает добавление свойств в объект.
+Object.seal(obj)
+Запрещает добавление и удаление свойств, все текущие свойства делает configurable: false.
+Object.freeze(obj)
+Запрещает добавление, удаление и изменение свойств, все текущие свойства делает configurable: false, writable: false.
+Object.isExtensible(obj)
+Возвращает false, если добавление свойств объекта было запрещено вызовом метода Object.preventExtensions.
+Object.isSealed(obj)
+Возвращает true, если добавление и удаление свойств объекта запрещено, и все текущие свойства являются configurable: false.
+Object.isFrozen(obj)
+Возвращает true, если добавление, удаление и изменение свойств объекта запрещено, и все текущие свойства являются configurable: false, writable: false.
+*/
+
+
+function User(fullName) {
+  this.fullName = fullName;
+}
+
+var vasya = new User("Василий Попкин");
+
+
+Object.definePropertie(User, 'firstName', {
+	get: function() {
+		return this.fullName.split(' ')[0]
+	},
+	set: function(value) {
+		this.fullName = value + fullName.split(' ')[1]
+	}
+})
+
+
+
+
+
+//Статические и фабричные методы
+/*Методы и свойства, которые не привязаны к конкретному экземпляру объекта,
+называют «статическими». Их записывают прямо в саму функцию-конструктор.*/
+
+//В коде ниже используются статические свойства Article.count и Article.DEFAULT_FORMAT:
+function Article() {Article.count++;}
+Article.count = 0; // статическое свойство-переменная
+Article.DEFAULT_FORMAT = "html"; // статическое свойство-константа
+/*
+Они хранят данные, специфичные не для одного объекта, а для всех статей целиком.
+Как правило, это чаще константы, такие как формат «по умолчанию» Article.DEFAULT_FORMAT.*/
+
+//Статические методы
+//Создадим для Article статический метод Article.showCount():
+function Article() {Article.count++;
+  //...
+}
+Article.count = 0;
+Article.showCount = function() {
+  alert( this.count ); // (1)
+}
+// использование
+new Article(); new Article();
+Article.showCount(); // (2)
+/*
+Здесь Article.count – статическое свойство, а Article.showCount – статический метод.
+Обратим внимание на использование this в примере выше. Несмотря на то, что переменная и метод – статические, он всё ещё полезен. В строке (1) он равен Article.*/
+
+/*"Фабричный статический метод" – удобная альтернатива такому конструктору. 
+Так называется статический метод, который служит для создания 
+новых объектов (поэтому и называется «фабричным»).*/
+
+/*
+Итого
+Статические свойства и методы объекта удобно применять в следующих случаях:
+Общие действия и подсчёты, имеющие отношения ко всем объектам данного типа. 
+В примерах выше это подсчёт количества.
+Методы, не привязанные к конкретному объекту, например сравнение.
+Вспомогательные методы, которые полезны вне объекта, например для форматирования даты.
+Фабричные методы.*/
+
+/*
+Добавить в конструктор Article:
+
+Подсчёт общего количества созданных объектов. Запоминание даты последнего созданного объекта.
+Используйте для этого статические свойства. Пусть вызов Article.showStats() выводит то и другое.*/
+function Article() {
+  this.created = new Date();
+  Article.count++; // увеличиваем счетчик при каждом вызове
+  Article.last = this.created; // и запоминаем дату
+}
+Article.count = 0; // начальное значение
+// (нельзя оставить undefined, т.к. Article.count++ будет NaN)
+Article.showStats = function() {
+  alert( 'Всего: ' + this.count + ', Последняя: ' + this.last );};
+new Article();new Article();
+Article.showStats(); // Всего: 2, Последняя: (дата)
+new Article();
+Article.showStats(); // Всего: 3, Последняя: (дата)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
