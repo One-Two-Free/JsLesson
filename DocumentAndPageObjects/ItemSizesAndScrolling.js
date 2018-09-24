@@ -33,6 +33,8 @@
 <main style="position: relative">
   <form>  <div id="example" style="position: absolute; left: 180px; top: 180px">...</div>
   </form></main>
+	
+	
 	/*offsetWidth/Height
 Теперь переходим к самому элементу. Эти два свойства – самые простые. 
 Они содержат «внешнюю» ширину/высоту элемента, то есть его полный размер, включая рамки border.
