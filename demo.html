@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+ <div class="menu">
+  <span class="title"><%-title%></span>
+  <ul>
+    <% items.forEach(function(item) { %>
+    <li><%-item%></li>
+    <% }); %>
+  </ul>
+</div>
+
+  <script type="text/javascript">
+    var html = _.template(tmpl)({
+  title: "Сладости",
+  items: [
+    "Торт",
+    "Печенье",
+    "Пирожное"
+  ]
+});
+    
+  </script>
+</body>
+</html>
