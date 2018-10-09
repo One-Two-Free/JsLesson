@@ -117,7 +117,101 @@ xhr.ontimeout = function() {
 	timeout – запрос был прекращён по таймауту.
 	loadend – запрос был завершён (успешно или неуспешно)
 Используя эти события можно более удобно отслеживать загрузку (onload) и ошибку (onerror), а также количество загруженных данных (onprogress).
-Ранее мы видели ещё одно событие – readystatechange. Оно появилось гораздо раньше, ещё до появления текущего стандарта.*/
+Ранее мы видели ещё одно событие – readystatechange. Оно появилось гораздо раньше, ещё до появления текущего стандарта.
+
+В современных браузерах от него можно отказаться в пользу других, необходимо лишь, как мы увидим далее, учесть особенности IE8-9.*/
+
+
+/*IE8,9: XDomainRequest
+В IE8 и IE9 поддержка XMLHttpRequest ограничена:
+
+	Не поддерживаются события, кроме onreadystatechange.
+	Некорректно поддерживается состояние readyState = 3: браузер может сгенерировать его только один раз во время запроса, а не при каждом пакете данных. Кроме того, он не даёт доступ к ответу responseText до того, как он будет до конца получен.
+Дело в том, что, когда создавались эти браузеры, спецификации были не до конца проработаны. Поэтому разработчики браузера решили добавить свой объект XDomainRequest, который реализовывал часть возможностей современного стандарта.
+А обычный XMLHttpRequest решили не трогать, чтобы ненароком не сломать существующий код.
+
+для того, чтобы получить некоторые из современных возможностей в IE8,9 – вместо new XMLHttpRequest() нужно использовать new XDomainRequest.
+
+Кросс-браузерно:*/
+var XHR = ("onload" in new XMLHttpRequest()) ? XMLHttpRequest : XDomainRequest;
+var xhr = new XHR();
+/*Теперь в IE8,9 поддерживаются события onload, onerror и onprogress. Это именно для IE8,9. Для IE10 обычный XMLHttpRequest уже является полноценным.*/
+
+
+/*IE9- и кеширование
+Обычно ответы на запросы XMLHttpRequest кешируются, как и обычные страницы.
+
+Но IE9- по умолчанию кеширует все ответы, не снабжённые антикеш-заголовком. Другие браузеры этого не делают. Чтобы этого избежать, сервер должен добавить в ответ соответствующие антикеш-заголовки, например Cache-Control: no-cache.
+
+Впрочем, использовать заголовки типа Expires, Last-Modified и Cache-Control рекомендуется в любом случае, чтобы дать понять браузеру (не обязательно IE), что ему следует делать.
+
+Альтернативный вариант – добавить в URL запроса случайный параметр, предотвращающий кеширование.
+Например, вместо xhr.open('GET', 'service', false) написать:*/
+xhr.open('GET', 'service?r=' + Math.random(), false);
+
+
+
+	/*Итого
+Типовой код для GET-запроса при помощи XMLHttpRequest:*/
+var xhr = new XMLHttpRequest();
+
+xhr.open('GET', '/my/url', true);
+
+xhr.send();
+
+xhr.onreadystatechange = function() {
+  if (this.readyState != 4) return;
+
+  // по окончании запроса доступны:
+  // status, statusText
+  // responseText, responseXML (при content-type: text/xml)
+
+  if (this.status != 200) {
+    // обработать ошибку
+    alert( 'ошибка: ' + (this.status ? this.statusText : 'запрос не удался') );
+    return;
+  }
+
+  // получить результат из this.responseText или this.responseXML
+}
+
+
+/*Мы разобрали следующие методы XMLHttpRequest:
+
+	open(method, url, async, user, password)
+	send(body)
+	abort()
+	setRequestHeader(name, value)
+	getResponseHeader(name)
+	getAllResponseHeaders()
+	
+Свойства XMLHttpRequest:
+	timeout
+	responseText
+	responseXML
+	status
+	statusText
+	
+События:
+	onreadystatechange
+	ontimeout
+	onerror
+	onload
+	onprogress
+	onabort
+	onloadstart
+	onloadend
+*/
+
+
+
+
+
+
+
+
+
+
 
 
 

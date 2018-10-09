@@ -1,0 +1,1 @@
+/*COMET с XMLHttpRequest: длинные опросы*/
